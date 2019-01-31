@@ -1,46 +1,48 @@
 package sandbox
 
 object Main extends App {
-  import PrintableInstances._
-  import PrintableSyntax._
+  println("started...")
 
-  val cat = Cat("Garfield", 38, "ginger and black")
-  // cat: Cat = Cat(Garfield,38,ginger and black)
+  type Absurd[A] = A => Nothing
 
-  cat.print
-  // Garfield is a 38 year-old ginger and black cat.
-}
+  def never[T](t: T)(implicit evidence: Absurd[T]) = t
+  //never(1)
 
-final case class Cat(name: String, age: Int, color: String)
+  sealed trait TopType
+  case class SubType() extends TopType
 
-//NAME is a AGE year-old COLOR cat.
+  def always[T](t:T)(implicit evidence: Absurd[TopType] <:< Absurd[SubType]) = t
 
-trait Printable[A] {
-  def format(v: A): String
-}
+  def add5[T](t: T)(implicit evidence: Absurd[Int] <:< Absurd[T]): T = { 
+    case t: Int => k + 5 
+    case _ => -1
+    }
 
-object PrintableInstances {
-  implicit val printableString: Printable[String] = new Printable[String] {
-    def format(_val: String) = _val
-  }
+  add5(1)
 
-  implicit val printableInt: Printable[Int] = new Printable[Int] {
-    def format(_val: Int) = _val.toString
-  }
+  val canConvert = implicitly[SubType <:< TopType] //works
 
-  implicit val printableCat: Printable[Cat] = new Printable[Cat] {
-    def format(_val: Cat): String = s"${Printable.format(_val.name)} is a ${Printable.format(_val.age)} year old ${Printable.format(_val.color)} cat"
-  }
-}
+  // val canConvertAbsurd = implicitly[Absurd[SubType] <:< Absurd[TopType]] //doesn't work
 
-object Printable {
-  def format[A](a: A)(implicit P: Printable[A]): String = P.format(a)
-  def print[A](a: A)(implicit P: Printable[A]): Unit = println(format(a))
-}
+  // val canConvertAbsurd = implicitly[Absurd[TopType] <:< Absurd[SubType]] //works
 
-object PrintableSyntax {
-  implicit class PrintableOps[O](instance: O) {
-    def format(implicit P: Printable[O]): String = Printable.format(instance)
-    def print(implicit P: Printable[O]): Unit = Printable.print(instance)
-  }
+  // def alwaysDoubleNegative[T](t:T)(implicit evidence: Absurd[Absurd[T]] =:= T) = t
+
+  // sealed trait A
+  // sealed trait B
+
+  // new A with B {} // Logical "AND"
+
+  // def always[T](t:T)(implicit evidence: Absurd[Absurd[T]]) = t
+
+  // alwaysDoubleNegative(1)
+
+  // println("SUCCESS!!! " + fooNever(1)) //not compiling
+
+
+  // type Always[A] = Never[Never[A]]
+
+  // def fooAlways[T: Always](t: T): T = t
+
+  // println(fooAlways(1))
 }
